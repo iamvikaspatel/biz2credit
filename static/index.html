@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CollectWise | Collections Strategy Optimizer</title>
+  <style>
+    :root {
+      --primary: #0f4c5c;
+      --primary-hover: #0a3641;
+      --bg-main: #f8fafc;
+      --bg-card: #ffffff;
+      --border-color: #e2e8f0;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --text-light: #94a3b8;
+      --seg-willing: #10b981;
+      --seg-willing-bg: #ecfdf5;
+      --seg-habitual: #d97706;
+      --seg-habitual-bg: #fffbeb;
+      --seg-hardship: #6366f1;
+      --seg-hardship-bg: #eef2ff;
+      --seg-unresponsive: #f97316;
+      --seg-unresponsive-bg: #fff7ed;
+      --seg-escalation: #b91c1c;
+      --seg-escalation-bg: #fef2f2;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg-main);
+      color: var(--text-main);
+      line-height: 1.5;
+      padding-bottom: 80px;
+    }
+    .container { max-width: 1200px; margin: 0 auto; padding: 24px; }
+    header {
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 16px;
+      margin-bottom: 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .brand h1 { font-size: 20px; font-weight: 700; color: var(--primary); }
+    .brand p { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
+    .role-switcher { display: flex; justify-content: center; gap: 12px; margin-bottom: 28px; }
+    .role-toggle-btn {
+      flex: 1; max-width: 250px; padding: 12px 20px; font-size: 14px; font-weight: 600;
+      text-align: center; border: 1px solid var(--border-color); border-radius: 6px;
+      background: var(--bg-card); color: var(--text-muted); cursor: pointer; font-family: inherit;
+    }
+    .role-toggle-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .hidden { display: none !important; }
+    .card {
+      background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px;
+      padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .form-container { max-width: 640px; margin: 0 auto; }
+    .form-group { margin-bottom: 16px; display: flex; flex-direction: column; gap: 6px; }
+    .form-group label { font-size: 13px; font-weight: 600; }
+    .form-group input, .form-group select, .form-group textarea {
+      padding: 10px 12px; font-size: 14px; border: 1px solid var(--border-color);
+      border-radius: 6px; font-family: inherit;
+    }
+    .btn-primary, .btn-secondary, .btn-ask {
+      padding: 10px 16px; font-size: 13px; font-weight: 600; border-radius: 6px;
+      cursor: pointer; font-family: inherit; border: none;
+    }
+    .btn-primary { background: var(--primary); color: #fff; width: 100%; }
+    .btn-primary:hover:not(:disabled) { background: var(--primary-hover); }
+    .btn-secondary { background: #fff; border: 1px solid #cbd5e1; color: var(--text-main); }
+    .inline-error-alert {
+      background: #fef2f2; border: 1px solid #fca5a5; color: #991b1b;
+      padding: 12px 16px; border-radius: 6px; font-size: 13px; margin-bottom: 16px;
+    }
+    .agent-layout { display: grid; grid-template-columns: 34% 66%; gap: 24px; align-items: start; }
+    @media (max-width: 900px) { .agent-layout { grid-template-columns: 1fr; } }
+    .ledger-list { display: flex; flex-direction: column; gap: 8px; max-height: 620px; overflow-y: auto; }
+    .ledger-item {
+      padding: 14px; background: #fff; border: 1px solid var(--border-color); border-radius: 6px;
+      cursor: pointer; transition: all 0.15s;
+    }
+    .ledger-item:hover { background: #f8fafc; }
+    .ledger-item.selected { background: #eff6ff; border-color: #93c5fd; }
+    .ledger-item-name { font-weight: 700; font-size: 14px; }
+    .ledger-item-meta { font-size: 12px; color: var(--text-muted); }
+    .badge-segment {
+      font-size: 10px; font-weight: 700; text-transform: uppercase; padding: 3px 8px;
+      border-radius: 4px; display: inline-block;
+    }
+    .badge-segment.willing { background: var(--seg-willing-bg); color: #065f46; }
+    .badge-segment.habitual { background: var(--seg-habitual-bg); color: #78350f; }
+    .badge-segment.hardship { background: var(--seg-hardship-bg); color: #3730a3; }
+    .badge-segment.unresponsive { background: var(--seg-unresponsive-bg); color: #9a3412; }
+    .badge-segment.escalation { background: var(--seg-escalation-bg); color: #7f1d1d; }
+    .priority-bar-wrap { margin-top: 6px; background: #e2e8f0; border-radius: 4px; height: 4px; }
+    .priority-bar { height: 4px; border-radius: 4px; background: var(--primary); }
+    .detail-heading { font-size: 20px; font-weight: 700; margin-bottom: 6px; }
+    .detail-sub-meta { font-size: 12px; color: var(--text-muted); margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border-color); }
+    .fields-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+    .fields-table td { padding: 8px; font-size: 13px; border-bottom: 1px dashed var(--border-color); }
+    .fields-table td.label-cell { font-weight: 600; color: var(--text-muted); width: 42%; }
+    .action-card {
+      background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 16px; margin-bottom: 20px;
+    }
+    .action-card h3 { font-size: 13px; color: #166534; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+    .action-card .action-main { font-size: 18px; font-weight: 700; color: var(--primary); margin-bottom: 8px; }
+    .message-draft-box {
+      background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 16px; margin-bottom: 20px;
+    }
+    .message-draft-box h3 { font-size: 13px; color: #92400e; text-transform: uppercase; margin-bottom: 8px; }
+    .message-draft-body { font-size: 14px; line-height: 1.6; color: var(--text-main); white-space: pre-wrap; }
+    .signal-card {
+      padding: 12px 14px; border: 1px solid var(--border-color); border-radius: 6px; margin-bottom: 8px;
+      border-left: 4px solid var(--primary);
+    }
+    .signal-card.low { border-left-color: var(--seg-willing); }
+    .signal-card.medium { border-left-color: var(--seg-habitual); }
+    .signal-card.high { border-left-color: var(--seg-escalation); }
+    .section-subtitle { font-size: 13px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin: 16px 0 10px; }
+    .rationale-box { background: #f8fafc; border: 1px solid var(--border-color); border-radius: 6px; padding: 14px; font-size: 13px; }
+    .assistant-section { margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border-color); }
+    .chips-container { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+    .chip-btn { padding: 6px 12px; font-size: 11px; font-weight: 600; background: #f1f5f9; border: 1px solid var(--border-color); border-radius: 16px; cursor: pointer; }
+    .input-row { display: flex; gap: 8px; }
+    .input-row input { flex: 1; padding: 10px; border: 1px solid var(--border-color); border-radius: 6px; }
+    .btn-ask { background: var(--primary); color: #fff; }
+    .assistant-answer-box { margin-top: 12px; background: #f8fafc; border: 1px solid var(--border-color); border-radius: 6px; padding: 14px; font-size: 13px; }
+    .empty-state { display: flex; justify-content: center; align-items: center; height: 400px; color: var(--text-muted); font-size: 14px; }
+    .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 16px; }
+    .stat-card { background: #f8fafc; border: 1px solid var(--border-color); border-radius: 6px; padding: 12px; text-align: center; }
+    .stat-card .val { font-size: 20px; font-weight: 700; color: var(--primary); }
+    .stat-card .lbl { font-size: 11px; color: var(--text-muted); text-transform: uppercase; }
+    .audit-item { font-size: 12px; padding: 8px; border-bottom: 1px dashed var(--border-color); }
+    .btn-auth {
+      padding: 8px 16px;
+      font-size: 13px;
+      font-weight: 600;
+      border-radius: 6px;
+      cursor: pointer;
+      font-family: inherit;
+      border: 1px solid var(--border-color);
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .btn-auth-unauthenticated {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary);
+    }
+    .btn-auth-unauthenticated:hover {
+      background: var(--primary-hover);
+      border-color: var(--primary-hover);
+      transform: translateY(-1px);
+    }
+    .btn-auth-authenticated {
+      background: var(--seg-willing-bg);
+      color: #065f46;
+      border-color: #a7f3d0;
+      cursor: default;
+    }
+    .btn-auth-authenticated:hover {
+      background: #d1fae5;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner-loader { width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.8s linear infinite; display: inline-block; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="brand">
+        <h1>CollectWise</h1>
+        <p>AI-Based Collections Strategy Optimizer</p>
+      </div>
+    </header>
+
+    <div class="role-switcher">
+      <button id="btn-agent" class="role-toggle-btn active" onclick="switchView('agent')">Collections agent</button>
+      <button id="btn-supervisor" class="role-toggle-btn" onclick="switchView('supervisor')">Supervisor (ingest)</button>
+    </div>
+
+    <!-- API key auth (role derived server-side from key) -->
+    <div class="card" style="max-width:640px;margin:0 auto 20px;padding:14px 18px;">
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+        <label for="api-key-input" style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;">API Key</label>
+        <input id="api-key-input" type="password" placeholder="Enter your role API key" oninput="updateAuthUI()" style="flex:1;min-width:200px;padding:8px 10px;border:1px solid var(--border-color);border-radius:6px;font-size:13px;">
+        <button id="btn-authenticate" class="btn-auth btn-auth-unauthenticated" onclick="saveApiKey()">Authenticate</button>
+      </div>
+      <p id="auth-status" style="font-size:12px;color:var(--text-muted);margin-top:8px;">Not authenticated. Use the API key for your role (see .env.example).</p>
+    </div>
+
+    <!-- SUPERVISOR: Ingest borrower -->
+    <div id="view-supervisor" class="form-container hidden">
+      <div class="card">
+        <h2 style="font-size:18px;margin-bottom:16px;font-weight:700;">Ingest Delinquent Borrower</h2>
+        <div id="supervisor-error" class="inline-error-alert hidden"></div>
+        <form id="borrower-form" onsubmit="submitBorrowerForm(event)">
+          <div class="form-group"><label>Name</label><input id="b-name" required placeholder="Priya Sharma"></div>
+          <div class="form-group"><label>Phone</label><input id="b-phone" required placeholder="+91-98765-43210"></div>
+          <div class="form-group"><label>Email</label><input id="b-email" type="email" required placeholder="priya@email.com"></div>
+          <div class="form-group"><label>Loan amount (₹)</label><input id="b-loan" type="number" required min="1"></div>
+          <div class="form-group"><label>Days past due</label><input id="b-dpd" type="number" required min="0" value="15"></div>
+          <div class="form-group"><label>Overdue amount (₹)</label><input id="b-overdue" type="number" required min="0"></div>
+          <div class="form-group">
+            <label>Prior payment behavior</label>
+            <select id="b-behavior" required>
+              <option value="on_time">On time</option>
+              <option value="occasional_late">Occasional late</option>
+              <option value="chronic_late">Chronic late</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Preferred channel</label>
+            <select id="b-channel" required>
+              <option value="sms">SMS</option>
+              <option value="email">Email</option>
+              <option value="call">Call</option>
+            </select>
+          </div>
+          <div class="form-group"><label>Hardship indicators (comma-separated)</label><input id="b-hardship" placeholder="job_loss, medical"></div>
+          <div class="form-group"><label>Partial payments last 30d (₹)</label><input id="b-partial" type="number" min="0" value="0"></div>
+          <div style="display: flex; gap: 12px; margin-top: 20px;">
+            <button type="button" class="btn-secondary" onclick="loadDemoData()" style="flex: 1;">Load Demo Data</button>
+            <button type="submit" id="btn-ingest" class="btn-primary" style="flex: 2;">Ingest &amp; generate strategy</button>
+          </div>
+        </form>
+        <div id="ingest-result" class="hidden" style="margin-top:20px;padding:16px;background:#ecfdf5;border:1px solid #bbf7d0;border-radius:6px;">
+          <strong>Borrower ingested:</strong> <span id="ingest-id"></span><br>
+          <strong>Segment:</strong> <span id="ingest-segment"></span><br>
+          <strong>Action:</strong> <span id="ingest-action"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- AGENT: Dashboard -->
+    <div id="view-agent" class="agent-layout">
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+          <h2 style="font-size:16px;font-weight:700;">Priority Queue</h2>
+          <button class="btn-secondary" onclick="loadBorrowers()">Refresh</button>
+        </div>
+        <div class="stats-row">
+          <div class="stat-card"><div class="val" id="stat-total">—</div><div class="lbl">Borrowers</div></div>
+          <div class="stat-card"><div class="val" id="stat-escalation">—</div><div class="lbl">Escalations</div></div>
+          <div class="stat-card"><div class="val" id="stat-avg-recovery">—</div><div class="lbl">Avg recovery</div></div>
+        </div>
+        <div id="agent-list-error" class="inline-error-alert hidden"></div>
+        <div id="ledger-list" class="ledger-list"></div>
+      </div>
+
+      <div class="card" style="min-height:500px;">
+        <div id="detail-empty" class="empty-state"><p>Select a borrower to view strategy recommendation.</p></div>
+        <div id="detail-panel" class="hidden">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;">
+            <h2 id="det-name" class="detail-heading"></h2>
+            <span id="det-segment-badge"></span>
+          </div>
+          <div id="det-meta" class="detail-sub-meta"></div>
+          <div id="agent-detail-error" class="inline-error-alert hidden"></div>
+
+          <div class="stats-row">
+            <div class="stat-card"><div class="val" id="det-priority">—</div><div class="lbl">Priority score</div></div>
+            <div class="stat-card"><div class="val" id="det-recovery">—</div><div class="lbl">Recovery prob.</div></div>
+            <div class="stat-card"><div class="val" id="det-dpd">—</div><div class="lbl">Days past due</div></div>
+          </div>
+
+          <div class="action-card">
+            <h3>Next Best Action</h3>
+            <div class="action-main" id="det-action">—</div>
+            <div style="font-size:13px;color:var(--text-muted);">
+              Channel: <strong id="det-channel">—</strong> &nbsp;|&nbsp; Best time: <strong id="det-time">—</strong>
+            </div>
+          </div>
+
+          <div class="message-draft-box">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+              <h3 style="margin:0;">Customer-safe message draft</h3>
+              <button id="btn-restrategize" class="btn-secondary" style="font-size:11px;padding:4px 10px;" onclick="reStrategize()">Refresh strategy</button>
+            </div>
+            <div id="det-message" class="message-draft-body">—</div>
+          </div>
+
+          <table class="fields-table">
+            <tbody>
+              <tr><td class="label-cell">Phone</td><td id="det-phone"></td></tr>
+              <tr><td class="label-cell">Email</td><td id="det-email"></td></tr>
+              <tr><td class="label-cell">Loan amount</td><td id="det-loan"></td></tr>
+              <tr><td class="label-cell">Overdue amount</td><td id="det-overdue"></td></tr>
+              <tr><td class="label-cell">Payment behavior</td><td id="det-behavior"></td></tr>
+              <tr><td class="label-cell">Hardship indicators</td><td id="det-hardship"></td></tr>
+              <tr><td class="label-cell">Partial payments (30d)</td><td id="det-partial"></td></tr>
+            </tbody>
+          </table>
+
+          <div class="section-subtitle">Strategy signals</div>
+          <div id="det-signals"></div>
+
+          <div class="section-subtitle">Strategy rationale</div>
+          <div id="det-rationale" class="rationale-box">—</div>
+
+          <div class="section-subtitle" style="display:flex;justify-content:space-between;align-items:center;">
+            <span>Action audit log</span>
+            <button class="btn-secondary" style="font-size:11px;padding:4px 10px;" onclick="toggleAudit()">Audit trail</button>
+          </div>
+          <div id="det-audit-log" class="hidden rationale-box" style="margin-bottom:12px;"></div>
+          <div id="det-ai-audit" class="hidden rationale-box" style="font-size:11px;"></div>
+
+          <div class="assistant-section">
+            <div style="font-size:14px;font-weight:700;margin-bottom:10px;">Ask the strategy assistant</div>
+            <div class="chips-container">
+              <button class="chip-btn" onclick="fillQuestion('Why is this borrower assigned to hardship support?')">Why hardship support?</button>
+              <button class="chip-btn" onclick="fillQuestion('Why was this channel recommended?')">Why this channel?</button>
+              <button class="chip-btn" onclick="fillQuestion('What is the recovery outlook?')">Recovery outlook?</button>
+            </div>
+            <div class="input-row">
+              <input id="question-input" placeholder="Ask about this borrower's strategy..." onkeydown="if(event.key==='Enter')askQuestion()">
+              <button class="btn-ask" onclick="askQuestion()">Ask</button>
+            </div>
+            <div id="answer-box" class="assistant-answer-box hidden"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let activeRole = 'agent';
+    let currentBorrowerId = null;
+    let loadedBorrowers = [];
+
+    const DEFAULT_KEYS = {
+      agent: 'dev-agent-key-change-me',
+      supervisor: 'dev-supervisor-key-change-me'
+    };
+
+    function getApiKey() {
+      return sessionStorage.getItem('api_key') || '';
+    }
+
+    function authHeaders() {
+      const key = getApiKey();
+      if (!key) throw new Error('Not authenticated');
+      return { 'X-API-Key': key };
+    }
+
+    function updateAuthUI() {
+      const input = document.getElementById('api-key-input');
+      const btn = document.getElementById('btn-authenticate');
+      const status = document.getElementById('auth-status');
+      if (!input || !btn || !status) return;
+      const currentVal = input.value.trim();
+      const storedVal = sessionStorage.getItem('api_key') || '';
+
+      if (currentVal && currentVal === storedVal) {
+        btn.innerHTML = 'Authenticated';
+        btn.className = 'btn-auth btn-auth-authenticated';
+        status.innerText = 'Authenticated. Role is determined by your API key on the server.';
+        status.style.color = '#065f46';
+      } else {
+        btn.innerHTML = 'Authenticate';
+        btn.className = 'btn-auth btn-auth-unauthenticated';
+        status.innerText = 'Not authenticated. Click Authenticate to apply this key.';
+        status.style.color = 'var(--text-muted)';
+      }
+    }
+
+    function saveApiKey() {
+      const input = document.getElementById('api-key-input');
+      const key = input.value.trim();
+      if (!key) return;
+      sessionStorage.setItem('api_key', key);
+      updateAuthUI();
+      if (activeRole === 'agent') loadBorrowers();
+    }
+
+    function initAuth() {
+      sessionStorage.removeItem('api_key');
+      const input = document.getElementById('api-key-input');
+      input.value = DEFAULT_KEYS[activeRole];
+      updateAuthUI();
+
+      const container = document.getElementById('ledger-list');
+      if (container) {
+        container.innerHTML = '<div style="color:var(--text-muted);font-style:italic;font-size:13px;">Not authenticated. Click Authenticate above to load queue.</div>';
+      }
+    }
+
+    function switchView(view) {
+      activeRole = view;
+      document.getElementById('btn-agent').classList.toggle('active', view === 'agent');
+      document.getElementById('btn-supervisor').classList.toggle('active', view === 'supervisor');
+      document.getElementById('view-agent').classList.toggle('hidden', view !== 'agent');
+      document.getElementById('view-supervisor').classList.toggle('hidden', view !== 'supervisor');
+      
+      sessionStorage.removeItem('api_key');
+      document.getElementById('api-key-input').value = DEFAULT_KEYS[view];
+      
+      updateAuthUI();
+
+      if (view === 'agent') {
+        const container = document.getElementById('ledger-list');
+        if (container) {
+          container.innerHTML = '<div style="color:var(--text-muted);font-style:italic;font-size:13px;">Not authenticated. Click Authenticate above to load queue.</div>';
+        }
+        document.getElementById('stat-total').innerText = '—';
+        document.getElementById('stat-escalation').innerText = '—';
+        document.getElementById('stat-avg-recovery').innerText = '—';
+        document.getElementById('detail-empty').classList.remove('hidden');
+        document.getElementById('detail-panel').classList.add('hidden');
+      }
+    }
+
+    function escHtml(s) {
+      return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    function formatCurrency(v) {
+      const n = parseFloat(v);
+      return isNaN(n) ? 'N/A' : '₹' + n.toLocaleString('en-IN');
+    }
+
+    function formatTS(ts) {
+      if (!ts) return 'N/A';
+      try { return new Date(ts).toLocaleString(); } catch { return ts; }
+    }
+
+    function getSegmentClass(segment) {
+      if (!segment) return 'willing';
+      const s = segment.toLowerCase();
+      if (s.includes('willing')) return 'willing';
+      if (s.includes('habitual')) return 'habitual';
+      if (s.includes('hardship')) return 'hardship';
+      if (s.includes('unresponsive')) return 'unresponsive';
+      return 'escalation';
+    }
+
+    function renderSegmentBadge(segment) {
+      const cls = getSegmentClass(segment);
+      return `<span class="badge-segment ${cls}">${escHtml(segment || 'Unassigned')}</span>`;
+    }
+
+    function renderBulletNote(el, text) {
+      if (!text) { el.innerHTML = '<em style="color:var(--text-muted)">No rationale available.</em>'; return; }
+      const bullets = text.split('\n').map(l => l.trim().replace(/^[•\-*]\s*/, '')).filter(Boolean);
+      if (!bullets.length) { el.innerText = text; return; }
+      el.innerHTML = '<ul style="margin:0;padding-left:18px;">' +
+        bullets.map(b => `<li style="margin-bottom:4px;font-size:13px;">${escHtml(b)}</li>`).join('') + '</ul>';
+    }
+
+    async function loadBorrowers() {
+      const errBox = document.getElementById('agent-list-error');
+      const container = document.getElementById('ledger-list');
+      errBox.classList.add('hidden');
+      container.innerHTML = '<div style="color:var(--text-muted);font-size:13px;padding:8px 0;">Loading...</div>';
+
+      try {
+        const res = await fetch('/borrowers', { headers: authHeaders() });
+        if (res.status === 401) throw new Error('auth');
+        if (!res.ok) throw new Error('Failed');
+        loadedBorrowers = await res.json();
+
+        const escalations = loadedBorrowers.filter(b => (b.segment || '').includes('Escalation')).length;
+        const avgRec = loadedBorrowers.length
+          ? Math.round(loadedBorrowers.reduce((s, b) => s + (b.recovery_probability || 0), 0) / loadedBorrowers.length * 100)
+          : 0;
+
+        document.getElementById('stat-total').innerText = loadedBorrowers.length;
+        document.getElementById('stat-escalation').innerText = escalations;
+        document.getElementById('stat-avg-recovery').innerText = avgRec + '%';
+
+        container.innerHTML = '';
+        if (!loadedBorrowers.length) {
+          container.innerHTML = '<div style="color:var(--text-muted);font-style:italic;font-size:13px;">No borrowers found.</div>';
+          return;
+        }
+
+        loadedBorrowers.forEach(b => {
+          const item = document.createElement('div');
+          item.className = 'ledger-item' + (currentBorrowerId === b.id ? ' selected' : '');
+          item.onclick = () => selectBorrower(b.id);
+          const priority = b.priority_score || 0;
+          const pct = Math.min(priority, 100);
+          item.innerHTML = `
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+              <span class="ledger-item-name">${escHtml(b.name)}</span>
+              ${renderSegmentBadge(b.segment)}
+            </div>
+            <span class="ledger-item-meta">ID: ${escHtml(b.id)} · DPD: ${b.days_past_due} · ${formatCurrency(b.overdue_amount)}</span>
+            <div class="priority-bar-wrap"><div class="priority-bar" style="width:${pct}%"></div></div>
+          `;
+          container.appendChild(item);
+        });
+      } catch (err) {
+        container.innerHTML = '';
+        errBox.innerText = err.message === 'auth'
+          ? 'Authentication required. Enter a valid API key above.'
+          : 'Unable to load borrowers.';
+        errBox.classList.remove('hidden');
+      }
+    }
+
+    async function selectBorrower(id) {
+      currentBorrowerId = id;
+      document.querySelectorAll('.ledger-item').forEach(el => el.classList.remove('selected'));
+      loadBorrowers();
+
+      document.getElementById('detail-empty').classList.add('hidden');
+      document.getElementById('detail-panel').classList.remove('hidden');
+      document.getElementById('agent-detail-error').classList.add('hidden');
+      document.getElementById('answer-box').classList.add('hidden');
+      document.getElementById('question-input').value = '';
+
+      try {
+        const res = await fetch(`/borrowers/${id}`, { headers: authHeaders() });
+        if (!res.ok) throw new Error('Failed');
+        const b = await res.json();
+
+        document.getElementById('det-name').innerText = b.name || 'Unknown';
+        document.getElementById('det-segment-badge').innerHTML = renderSegmentBadge(b.segment);
+        document.getElementById('det-meta').innerText = `ID: ${b.id} · Ingested: ${formatTS(b.ingested_timestamp)}`;
+        document.getElementById('det-priority').innerText = (b.priority_score || 0).toFixed(1);
+        document.getElementById('det-recovery').innerText = b.recovery_probability != null ? Math.round(b.recovery_probability * 100) + '%' : '—';
+        document.getElementById('det-dpd').innerText = b.days_past_due ?? '—';
+        document.getElementById('det-action').innerText = b.next_best_action || '—';
+        document.getElementById('det-channel').innerText = b.recommended_channel || '—';
+        document.getElementById('det-time').innerText = b.recommended_time || '—';
+        document.getElementById('det-message').innerText = b.message_draft || 'Generate or refresh strategy to see message draft.';
+        document.getElementById('det-phone').innerText = b.phone || 'N/A';
+        document.getElementById('det-email').innerText = b.email || 'N/A';
+        document.getElementById('det-loan').innerText = formatCurrency(b.loan_amount);
+        document.getElementById('det-overdue').innerText = formatCurrency(b.overdue_amount);
+        document.getElementById('det-behavior').innerText = (b.prior_payment_behavior || 'N/A').replace(/_/g, ' ');
+        document.getElementById('det-hardship').innerText = (b.hardship_indicators || []).join(', ') || 'None';
+        document.getElementById('det-partial').innerText = formatCurrency(b.partial_payments_last_30d);
+
+        const sigContainer = document.getElementById('det-signals');
+        sigContainer.innerHTML = '';
+        const signals = b.strategy_signals || [];
+        if (!signals.length) {
+          sigContainer.innerHTML = '<div style="font-size:13px;color:var(--text-muted);font-style:italic;">No signals detected.</div>';
+        } else {
+          signals.forEach(sig => {
+            const sev = (sig.severity || 'low').toLowerCase();
+            const card = document.createElement('div');
+            card.className = 'signal-card ' + (sev.includes('high') ? 'high' : sev.includes('medium') ? 'medium' : 'low');
+            card.innerHTML = `<strong>${escHtml(sig.type)}</strong> <span style="font-size:11px;color:var(--text-muted);">(${escHtml(sig.severity)})</span><br><span style="font-size:13px;color:var(--text-muted);">${escHtml(sig.evidence)}</span>`;
+            sigContainer.appendChild(card);
+          });
+        }
+
+        renderBulletNote(document.getElementById('det-rationale'), b.strategy_rationale);
+
+        const auditLog = document.getElementById('det-audit-log');
+        const logs = b.action_audit_log || [];
+        auditLog.innerHTML = logs.length
+          ? logs.slice().reverse().map(l => `<div class="audit-item">${formatTS(l.timestamp)} — <strong>${escHtml(l.action_recommended)}</strong> (${escHtml(l.segment)}) · ${escHtml(l.method)} · ${escHtml(l.status)}</div>`).join('')
+          : '<em style="color:var(--text-muted);">No audit entries yet.</em>';
+
+        const aiAudit = document.getElementById('det-ai-audit');
+        if (b.analysis_method) {
+          aiAudit.innerHTML = `<strong>AI method:</strong> ${escHtml(b.analysis_method)} · <strong>Timestamp:</strong> ${formatTS(b.ai_analysis_timestamp)}`;
+          aiAudit.dataset.prompt = b.ai_prompt_sent || '';
+          aiAudit.dataset.response = b.ai_raw_response || '';
+        }
+      } catch {
+        document.getElementById('agent-detail-error').innerText = 'Unable to load borrower details.';
+        document.getElementById('agent-detail-error').classList.remove('hidden');
+      }
+    }
+
+    async function reStrategize() {
+      if (!currentBorrowerId) return;
+      const btn = document.getElementById('btn-restrategize');
+      btn.disabled = true;
+      btn.innerText = 'Generating...';
+      try {
+        const res = await fetch(`/borrowers/${currentBorrowerId}/re-strategize`, {
+          method: 'POST',
+          headers: authHeaders()
+        });
+        if (!res.ok) throw new Error('Failed');
+        await selectBorrower(currentBorrowerId);
+        loadBorrowers();
+      } catch {
+        alert('Strategy refresh failed. Please try again.');
+      } finally {
+        btn.disabled = false;
+        btn.innerText = 'Refresh strategy';
+      }
+    }
+
+    function fillQuestion(text) {
+      document.getElementById('question-input').value = text;
+    }
+
+    async function askQuestion() {
+      if (!currentBorrowerId) return;
+      const q = document.getElementById('question-input').value.trim();
+      if (!q) return;
+      const box = document.getElementById('answer-box');
+      box.classList.remove('hidden');
+      box.innerText = 'Thinking...';
+      try {
+        const res = await fetch(`/borrowers/${currentBorrowerId}/query`, {
+          method: 'POST',
+          headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+          body: JSON.stringify({ question: q })
+        });
+        if (!res.ok) throw new Error('Failed');
+        const data = await res.json();
+        box.innerText = data.answer || 'No answer received.';
+      } catch {
+        box.innerText = 'Unable to get an answer right now.';
+      }
+    }
+
+    function toggleAudit() {
+      const log = document.getElementById('det-audit-log');
+      const ai = document.getElementById('det-ai-audit');
+      const hidden = log.classList.contains('hidden');
+      log.classList.toggle('hidden', !hidden);
+      if (ai.dataset.prompt) {
+        ai.classList.toggle('hidden', !hidden);
+        if (hidden) {
+          ai.innerHTML += `<hr style="margin:8px 0;border:0;border-top:1px solid #e2e8f0;"><pre style="max-height:120px;overflow:auto;font-size:10px;white-space:pre-wrap;">${escHtml(ai.dataset.prompt)}</pre>`;
+        }
+      }
+    }
+
+    function loadDemoData() {
+      document.getElementById('b-name').value = 'Meera Nair';
+      document.getElementById('b-phone').value = '+91-99887-76655';
+      document.getElementById('b-email').value = 'meera.nair@example.com';
+      document.getElementById('b-loan').value = 150000;
+      document.getElementById('b-dpd').value = 45;
+      document.getElementById('b-overdue').value = 15000;
+      document.getElementById('b-behavior').value = 'occasional_late';
+      document.getElementById('b-channel').value = 'call';
+      document.getElementById('b-hardship').value = 'job_loss';
+      document.getElementById('b-partial').value = 5000;
+    }
+
+    async function submitBorrowerForm(e) {
+      e.preventDefault();
+      const errBox = document.getElementById('supervisor-error');
+      const result = document.getElementById('ingest-result');
+      errBox.classList.add('hidden');
+      result.classList.add('hidden');
+
+      const hardshipRaw = document.getElementById('b-hardship').value.trim();
+      const payload = {
+        name: document.getElementById('b-name').value.trim(),
+        phone: document.getElementById('b-phone').value.trim(),
+        email: document.getElementById('b-email').value.trim(),
+        loan_amount: parseFloat(document.getElementById('b-loan').value),
+        days_past_due: parseInt(document.getElementById('b-dpd').value, 10),
+        overdue_amount: parseFloat(document.getElementById('b-overdue').value),
+        prior_payment_behavior: document.getElementById('b-behavior').value,
+        preferred_channel: document.getElementById('b-channel').value,
+        hardship_indicators: hardshipRaw ? hardshipRaw.split(',').map(s => s.trim()).filter(Boolean) : [],
+        partial_payments_last_30d: parseFloat(document.getElementById('b-partial').value) || 0,
+        response_history: [],
+        repayment_promises: []
+      };
+
+      try {
+        const res = await fetch('/borrowers', {
+          method: 'POST',
+          headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        if (res.status === 401) throw new Error('auth');
+        if (res.status === 403) throw new Error('forbidden');
+        if (!res.ok) throw new Error('Failed');
+        const data = await res.json();
+        document.getElementById('ingest-id').innerText = data.borrower_id;
+        document.getElementById('ingest-segment').innerText = data.segment;
+        document.getElementById('ingest-action').innerText = data.next_best_action;
+        result.classList.remove('hidden');
+      } catch (err) {
+        errBox.innerText = err.message === 'auth'
+          ? 'Invalid API key. Supervisor key required.'
+          : err.message === 'forbidden'
+          ? 'Your API key does not have supervisor permissions.'
+          : 'Ingestion failed. Check form data and try again.';
+        errBox.classList.remove('hidden');
+      }
+    }
+
+    initAuth();
+    if (getApiKey()) loadBorrowers();
+  </script>
+</body>
+</html>
